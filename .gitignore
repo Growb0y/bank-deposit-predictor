@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+.idea/
+server.log
+данные.xlsx
+sample_1000.xlsx
+sample_for_upload.xlsx
+model/catboost_model.cbm
+static/charts/
+analysis_results.json
+recommendations.json
+charts_manifest.json

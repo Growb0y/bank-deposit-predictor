@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Marketing - Прогнозирование депозитов</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif; background: #f0f2f5; color: #1a1a2e; line-height: 1.5; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+header .container { display: flex; align-items: center; justify-content: space-between; }
+header h1 { font-size: 1.5em; font-weight: 600; }
+header .subtitle { font-size: 0.9em; opacity: 0.8; margin-top: 4px; }
+.tabs { display: flex; gap: 2px; background: #e0e3e8; padding: 0; border-radius: 8px 8px 0 0; overflow: hidden; }
+.tab-btn { flex: 1; padding: 14px 20px; background: #d0d3d8; border: none; cursor: pointer; font-size: 0.9em; font-weight: 500; color: #555; transition: all 0.2s; }
+.tab-btn:hover { background: #c0c3c8; }
+.tab-btn.active { background: white; color: #1a1a2e; box-shadow: 0 -2px 0 #4a90d9; }
+.tab-content { display: none; background: white; border-radius: 0 0 8px 8px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.tab-content.active { display: block; }
+.card { background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px; border: 1px solid #e8eaed; }
+.card h3 { margin-bottom: 12px; color: #1a1a2e; font-size: 1.1em; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.stat { text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; }
+.stat .value { font-size: 2em; font-weight: 700; }
+.stat .label { font-size: 0.85em; opacity: 0.9; margin-top: 4px; }
+.stat.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+.stat.blue { background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%); }
+.stat.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 20px; }
+.chart-card { border: 1.5px solid #d0d3d8; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.chart-card img { width: 100%; height: auto; display: block; background: #fff; }
+.chart-card .caption { padding: 14px 16px 10px; font-size: 0.9em; color: #555; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.chart-card .caption strong { color: #1a1a2e; font-size: 1em; display: block; margin-bottom: 4px; }
+.chart-card .caption .desc { font-size: 0.85em; color: #666; line-height: 1.4; }
+.chart-card:nth-child(1) { background: #f0f4ff; }
+.chart-card:nth-child(2) { background: #f0faf0; }
+.chart-card:nth-child(3) { background: #fff5f5; }
+.chart-card:nth-child(4) { background: #f5f0ff; }
+.chart-card:nth-child(5) { background: #f0faf8; }
+.chart-card:nth-child(6) { background: #fff8f0; }
+.chart-card:nth-child(7) { background: #f5f0f8; }
+.chart-card:nth-child(8) { background: #f0f5fa; }
+.chart-card:nth-child(9) { background: #fafff0; }
+.chart-card:nth-child(10) { background: #fff0f5; }
+.chart-card:nth-child(11) { background: #f0f0fa; }
+.chart-card:nth-child(12) { background: #faf5f0; }
+.chart-card:nth-child(13) { background: #f5faf0; }
+.chart-card:nth-child(14) { background: #f0fff5; }
+.chart-card:nth-child(15) { background: #fff0f0; }
+form { max-width: 700px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+.form-group { display: flex; flex-direction: column; }
+.form-group label { font-size: 0.85em; font-weight: 500; margin-bottom: 4px; color: #444; }
+.form-group input, .form-group select { padding: 10px 12px; border: 1px solid #d0d3d8; border-radius: 6px; font-size: 0.95em; transition: border-color 0.2s; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #4a90d9; box-shadow: 0 0 0 3px rgba(74,144,217,0.1); }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; background: #4a90d9; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: 500; transition: all 0.2s; }
+.btn:hover { background: #357abd; transform: translateY(-1px); }
+.btn-success { background: #11998e; }
+.btn-success:hover { background: #0e8a7e; }
+.btn-danger { background: #e74c3c; }
+.btn-danger:hover { background: #c0392b; }
+.result-box { margin-top: 20px; padding: 20px; border-radius: 8px; background: #f0fdf4; border: 1px solid #86efac; }
+.result-box.negative { background: #fef2f2; border-color: #fca5a5; }
+.result-box h4 { margin-bottom: 8px; }
+.prob-bar { height: 24px; border-radius: 12px; overflow: hidden; background: #e0e0e0; margin: 10px 0; position: relative; }
+.prob-bar .fill { height: 100%; border-radius: 12px; transition: width 0.5s; }
+.prob-bar .label { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 0.8em; font-weight: 600; line-height: 24px; }
+.rec-card { padding: 16px; margin-bottom: 12px; border-left: 4px solid #4a90d9; background: #f8f9fa; border-radius: 0 8px 8px 0; }
+.rec-card.strategy { border-left-color: #11998e; }
+.rec-card.insight { border-left-color: #f093fb; }
+.rec-card .rec-title { font-weight: 600; margin-bottom: 4px; }
+.rec-card .rec-text { font-size: 0.9em; color: #555; }
+.strat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+.strat-item { text-align: center; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e8eaed; }
+.strat-item .strat-value { font-size: 1.6em; font-weight: 700; color: #1a1a2e; }
+.strat-item .strat-label { font-size: 0.8em; color: #666; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #e8eaed; }
+th { background: #f8f9fa; font-weight: 600; color: #444; font-size: 0.9em; }
+tr:hover { background: #f0f2f5; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 500; }
+.badge-pos { background: #dcfce7; color: #166534; }
+.badge-neg { background: #fef2f2; color: #991b1b; }
+select option { padding: 8px; }
+.full-width { grid-column: 1 / -1; }
+.loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.help-text { font-size: 0.8em; color: #888; margin-top: 2px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .form-row { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .tabs { flex-wrap: wrap; }
+  .tab-btn { flex: 1 1 auto; font-size: 0.8em; padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div>
+      <h1>🏦 Прогнозирование оформления депозита</h1>
+      <div class="subtitle">ML-модель для приоритизации клиентов</div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">📊 Дашборд</button>
+    <button class="tab-btn" data-tab="charts">📈 Визуализация</button>
+    <button class="tab-btn" data-tab="predict">🎯 Прогноз</button>
+    <button class="tab-btn" data-tab="strategy">📞 Калькулятор стратегии</button>
+    <button class="tab-btn" data-tab="metrics">⚙️ Метрики модели</button>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div class="tab-content active" id="tab-dashboard">
+    {% if analysis %}
+    <div class="grid-3" style="margin-bottom:20px;">
+      <div class="stat">
+        <div class="value">{{ analysis.dataset.total_clients }}</div>
+        <div class="label">Всего клиентов</div>
+      </div>
+      <div class="stat green">
+        <div class="value">{{ analysis.dataset.subscribed }}</div>
+        <div class="label">Оформили депозит</div>
+      </div>
+      <div class="stat orange">
+        <div class="value">{{ "%.1f"|format(analysis.dataset.conversion_rate * 100) }}%</div>
+        <div class="label">Конверсия</div>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="card">
+      <p>Аналитические данные не загружены. Запустите <code>train_model.py</code> для генерации анализа.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- METRICS TAB -->
+  <div class="tab-content" id="tab-metrics">
+    {% if analysis %}
+    <div class="card">
+      <h3>Метрики модели</h3>
+      <div class="grid-3">
+        <div class="strat-item">
+          <div class="strat-value">{{ "%.4f"|format(analysis.metrics.get('Не оформил', {}).get('f1-score', 0)) }}</div>
+          <div class="strat-label">F1 (не оформил)</div>
+        </div>
+        <div class="strat-item">
+          <div class="strat-value">{{ "%.4f"|format(analysis.metrics.get('Оформил', {}).get('f1-score', 0)) }}</div>
+          <div class="strat-label">F1 (оформил)</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px; text-align:center;" id="metricsChart"></div>
+    {% else %}
+    <div class="card">
+      <p>Метрики не загружены. Запустите <code>train_model.py</code>.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- CHARTS TAB -->
+  <div class="tab-content" id="tab-charts">
+    <div class="chart-grid" id="chartGrid"></div>
+  </div>
+
+  <!-- PREDICT TAB -->
+  <div class="tab-content" id="tab-predict">
+    <div class="card">
+      <h3>Прогноз для одного клиента</h3>
+      <p style="color:#666; margin-bottom:16px;">Заполните данные клиента и получите вероятность оформления депозита.</p>
+      <form id="predictForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Возраст</label>
+            <input type="number" name="age" value="35" min="18" max="100" required>
+          </div>
+          <div class="form-group">
+            <label>Профессия</label>
+            <select name="job">
+              <option value="администратор">Администратор</option>
+              <option value="инженер">Инженер</option>
+              <option value="менеджмент" selected>Менеджмент</option>
+              <option value="предприниматель">Предприниматель</option>
+              <option value="рабочий">Рабочий</option>
+              <option value="специалист">Специалист</option>
+              <option value="студент">Студент</option>
+              <option value="технический">Технический</option>
+              <option value="услуги">Услуги</option>
+              <option value="пенсионер">Пенсионер</option>
+              <option value="безработный">Безработный</option>
+              <option value="неизвестный">Неизвестный</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Семейное положение</label>
+            <select name="marital">
+              <option value="в браке" selected>В браке</option>
+              <option value="холост">Холост</option>
+              <option value="разведен/вдовец">Разведен/вдовец</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Образование</label>
+            <select name="education">
+              <option value="высшее">Высшее</option>
+              <option value="среднее" selected>Среднее</option>
+              <option value="начальное">Начальное</option>
+              <option value="неизвестно">Неизвестно</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Дефолт</label>
+            <select name="default">
+              <option value="нет" selected>Нет</option>
+              <option value="да">Да</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Среднегодовой баланс (евро)</label>
+            <input type="number" name="balance" value="1500" min="0" step="100">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Жилищный кредит</label>
+            <select name="housing">
+              <option value="нет" selected>Нет</option>
+              <option value="да">Да</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Потребительский кредит</label>
+            <select name="loan">
+              <option value="нет" selected>Нет</option>
+              <option value="да">Да</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Тип контакта</label>
+            <select name="contact">
+              <option value="неизвестно" selected>Неизвестно</option>
+              <option value="мобильный">Мобильный</option>
+              <option value="стационарный">Стационарный</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Месяц последнего контакта</label>
+            <select name="month">
+              <option value="may" selected>Май</option>
+              <option value="jun">Июнь</option>
+              <option value="jul">Июль</option>
+              <option value="aug">Август</option>
+              <option value="sep">Сентябрь</option>
+              <option value="oct">Октябрь</option>
+              <option value="nov">Ноябрь</option>
+              <option value="dec">Декабрь</option>
+              <option value="jan">Январь</option>
+              <option value="feb">Февраль</option>
+              <option value="mar">Март</option>
+              <option value="apr">Апрель</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Длительность звонка (сек)</label>
+            <input type="number" name="duration" value="180" min="0" step="1">
+          </div>
+          <div class="form-group">
+            <label>Кол-во звонков в кампании</label>
+            <input type="number" name="campaign" value="2" min="1" max="50">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Дней после последнего контакта</label>
+            <input type="number" name="pdays" value="-1" min="-1">
+            <span class="help-text">-1 если не было контакта ранее</span>
+          </div>
+          <div class="form-group">
+            <label>Контактов до этой кампании</label>
+            <input type="number" name="previous" value="0" min="0">
+          </div>
+        </div>
+        <div class="form-row full-width">
+          <div class="form-group">
+            <label>Результат предыдущей кампании</label>
+            <select name="poutcome">
+              <option value="неизвестно" selected>Неизвестно</option>
+              <option value="успех">Успех</option>
+              <option value="провал">Провал</option>
+              <option value="другое">Другое</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Порог вероятности</label>
+            <input type="number" name="threshold" value="0.5" min="0" max="1" step="0.05">
+            <span class="help-text">Клиенты с вероятностью >= порога считаются перспективными</span>
+          </div>
+        </div>
+        <button type="submit" class="btn">Рассчитать прогноз</button>
+      </form>
+      <div id="predictResult"></div>
+    </div>
+  </div>
+
+
+
+  <!-- STRATEGY CALCULATOR TAB -->
+  <div class="tab-content" id="tab-strategy">
+    <div class="card">
+      <h3>Калькулятор стратегии обзвона</h3>
+      <form id="strategyForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Стоимость одного звонка (евро)</label>
+            <input type="number" name="cost_per_call" value="5" min="0" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>Прибыль с одного депозита (евро)</label>
+            <input type="number" name="profit_per_deposit" value="50" min="0" step="10">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Бюджет кампании (евро, опционально)</label>
+            <input type="number" name="budget" placeholder="Например: 50000">
+            <span class="help-text">Оставьте пустым, если бюджет не ограничен</span>
+          </div>
+          <div class="form-group">
+            <label>Файл Excel с клиентами (опционально)</label>
+            <input type="file" name="strategy_file" accept=".xlsx" style="padding:8px; border:1px solid #d0d3d8; border-radius:6px;">
+            <span class="help-text">ℹ Если не выбран — расчёт по исходному файлу данные.xlsx. Загружаемый файл должен содержать те же колонки (кроме «Оформил ли клиент срочный депозит»).</span>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-success">Рассчитать стратегию</button>
+      </form>
+      <div id="strategyResult"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const CHARTS = {{ charts|tojson|safe }};
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+  });
+});
+
+// Render charts
+(function renderCharts() {
+  const grid = document.getElementById('chartGrid');
+  const chartTitles = {
+    'target_distribution': 'Распределение целевой переменной',
+    'age_distribution': 'Распределение возраста',
+    'balance_distribution': 'Распределение баланса',
+    'duration_distribution': 'Распределение длительности звонка',
+    'correlation_heatmap': 'Корреляционная матрица',
+    'monthly_trend': 'Сезонность контактов',
+    'contact_analysis': 'Конверсия по типу контакта',
+    'campaign_analysis': 'Анализ количества звонков',
+    'job_conversion': 'Конверсия по профессиям',
+    'marital_conversion': 'Конверсия по семейному положению',
+    'education_conversion': 'Конверсия по образованию',
+    'housing_conversion': 'Конверсия по наличию жилищного кредита',
+    'loan_conversion': 'Конверсия по наличию потребительского кредита',
+    'roc_curve': 'ROC-кривая',
+    'feature_importance': 'Важность признаков',
+  };
+  const chartLabels = {
+    'target_distribution': 'Показывает соотношение клиентов, оформивших и не оформивших депозит.',
+    'age_distribution': 'Показывает распределение клиентов по возрасту в разрезе оформивших и не оформивших депозит.',
+    'balance_distribution': 'Показывает распределение клиентов по среднегодовому балансу в разрезе целевой переменной.',
+    'duration_distribution': 'Показывает распределение длительности последнего контакта в разрезе оформивших и не оформивших депозит.',
+    'correlation_heatmap': 'Показывает корреляцию между числовыми признаками и целевой переменной.',
+    'monthly_trend': 'Показывает количество контактов и конверсию по месяцам.',
+    'contact_analysis': 'Показывает конверсию по типу контактной связи.',
+    'campaign_analysis': 'Показывает распределение количества звонков в разрезе оформивших и не оформивших депозит.',
+    'job_conversion': 'Показывает долю оформивших депозит по каждой профессии.',
+    'marital_conversion': 'Показывает долю оформивших депозит по семейному положению.',
+    'education_conversion': 'Показывает долю оформивших депозит по уровню образования.',
+    'housing_conversion': 'Показывает долю оформивших депозит по наличию жилищного кредита.',
+    'loan_conversion': 'Показывает долю оформивших депозит по наличию потребительского кредита.',
+    'roc_curve': 'Показывает качество модели — насколько хорошо она разделяет классы.',
+    'feature_importance': 'Показывает, какие признаки сильнее всего влияют на решение модели.',
+  };
+
+  if (Object.keys(CHARTS).length === 0) {
+    grid.innerHTML = '<div class="card"><p>Графики не найдены. Запустите <code>train_model.py</code> для генерации.</p></div>';
+    return;
+  }
+
+  // Sort charts: EDA first, then model evaluation
+  const order = ['target_distribution','age_distribution','job_conversion','marital_conversion','education_conversion',
+    'balance_distribution','duration_distribution','housing_conversion','loan_conversion','contact_analysis',
+    'campaign_analysis','monthly_trend','correlation_heatmap','feature_importance'];
+
+  const seen = new Set();
+  for (const key of order) {
+    if (CHARTS[key]) {
+      const card = document.createElement('div');
+      card.className = 'chart-card';
+      card.innerHTML = `<div class="caption"><strong>${chartTitles[key] || key.replace(/_/g,' ')}</strong><div class="desc">${chartLabels[key] || ''}</div></div><img src="/${CHARTS[key]}" alt="${key}" loading="lazy">`;
+      grid.appendChild(card);
+      seen.add(key);
+    }
+  }
+  for (const [key, path] of Object.entries(CHARTS)) {
+    if (!seen.has(key) && key !== 'roc_curve') {
+      const card = document.createElement('div');
+      card.className = 'chart-card';
+      card.innerHTML = `<div class="caption"><strong>${chartTitles[key] || key.replace(/_/g,' ')}</strong></div><img src="/${path}" alt="${key}" loading="lazy">`;
+      grid.appendChild(card);
+    }
+  }
+})();
+
+// Show ROC curve in metrics tab
+(function renderMetrics() {
+  const container = document.getElementById('metricsChart');
+  if (container && CHARTS['roc_curve']) {
+    container.innerHTML = `<div class="chart-card" style="display:inline-block; max-width:600px;"><div class="caption"><strong>ROC-кривая</strong><div class="desc">Показывает качество модели — насколько хорошо она разделяет классы.</div></div><img src="/${CHARTS['roc_curve']}" alt="roc_curve" style="width:100%;"></div>`;
+  }
+})();
+
+// Predict form
+document.getElementById('predictForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('button[type="submit"]');
+  btn.disabled = true; btn.innerHTML = '<span class="loading"></span>';
+
+  const formData = new FormData(this);
+  const data = {};
+  formData.forEach((v, k) => {
+    if (['age','balance','duration','campaign','pdays','previous'].includes(k)) data[k] = parseFloat(v);
+    else data[k] = v;
+  });
+
+  try {
+    const res = await fetch('/api/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    const div = document.getElementById('predictResult');
+    const probPct = (result.probability * 100).toFixed(1);
+    const isPositive = result.prediction === 1;
+    div.innerHTML = `
+      <div class="result-box ${isPositive ? '' : 'negative'}">
+        <h4>${isPositive ? '✅ Клиент перспективный' : '❌ Клиент не перспективный'}</h4>
+        <p>Вероятность оформления депозита: <strong>${probPct}%</strong></p>
+        <div class="prob-bar">
+          <div class="fill" style="width:${probPct}%; background: ${isPositive ? 'linear-gradient(90deg,#11998e,#38ef7d)' : 'linear-gradient(90deg,#ff6b6b,#ee5a24)'};"></div>
+          <span class="label" style="color:${probPct > 50 ? 'white' : '#333'}">${probPct}%</span>
+        </div>
+        <p style="font-size:0.85em; color:#666; margin-top:8px;">
+          Порог: ${data.threshold || 0.5} (клиенты с вероятностью >= порога считаются перспективными)
+        </p>
+      </div>`;
+  } catch (err) {
+    document.getElementById('predictResult').innerHTML = `<div class="result-box negative"><h4>❌ Ошибка</h4><p>${err.message}</p></div>`;
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'Рассчитать прогноз';
+  }
+});
+
+// Batch predict form
+
+
+// Strategy form
+document.getElementById('strategyForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('button[type="submit"]');
+  btn.disabled = true; btn.innerHTML = '<span class="loading"></span> Расчёт стратегии...';
+
+  const fileInput = this.querySelector('input[name="strategy_file"]');
+  const hasFile = fileInput && fileInput.files.length > 0;
+
+  try {
+    let result;
+    if (hasFile) {
+      const fd = new FormData(this);
+      fd.delete('strategy_file');
+      fd.delete('budget');
+      fd.append('file', fileInput.files[0]);
+      const cost = parseFloat(this.querySelector('[name="cost_per_call"]').value);
+      const profit = parseFloat(this.querySelector('[name="profit_per_deposit"]').value);
+      const budgetVal = this.querySelector('[name="budget"]').value;
+      fd.set('cost_per_call', String(cost));
+      fd.set('profit_per_deposit', String(profit));
+      if (budgetVal) fd.set('budget', String(budgetVal));
+      const res = await fetch('/api/strategy/upload', { method: 'POST', body: fd });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Ошибка сервера'); }
+      result = await res.json();
+    } else {
+      const formData = new FormData(this);
+      const data = {};
+      formData.forEach((v, k) => {
+        if (v && k !== 'strategy_file') data[k] = k === 'budget' ? parseFloat(v) : parseFloat(v);
+      });
+      const res = await fetch('/api/strategy', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Ошибка сервера'); }
+      result = await res.json();
+    }
+
+    const div = document.getElementById('strategyResult');
+
+    if (result.clients_to_call === 0) {
+      div.innerHTML = `<div class="result-box negative"><h4>Нет прибыльных клиентов</h4><p>При заданных параметрах ни один клиент не является прибыльным.</p></div>`;
+      return;
+    }
+
+    const downloadLink = result.download_url
+      ? `<div style="margin-top:12px;"><a href="${result.download_url}" class="btn btn-success" style="text-decoration:none;">📥 Скачать Excel с приоритетами</a></div>`
+      : '';
+
+    div.innerHTML = `
+      <div class="result-box">
+        <h4>📊 Оптимальная стратегия обзвона</h4>
+        <div class="strat-grid">
+          <div class="strat-item">
+            <div class="strat-value">${result.clients_to_call.toLocaleString()}</div>
+            <div class="strat-label">Клиентов к обзвону</div>
+          </div>
+          <div class="strat-item">
+            <div class="strat-value">${result.expected_deposits.toFixed(0)}</div>
+            <div class="strat-label">Ожидаемые депозиты</div>
+          </div>
+          <div class="strat-item" style="border-color: #11998e;">
+            <div class="strat-value" style="color: #11998e;">${result.expected_profit.toFixed(0)}€</div>
+            <div class="strat-label">Ожидаемая прибыль</div>
+          </div>
+          <div class="strat-item">
+            <div class="strat-value">${(result.roi * 100).toFixed(1)}%</div>
+            <div class="strat-label">ROI</div>
+          </div>
+          <div class="strat-item">
+            <div class="strat-value">${result.expected_cost.toFixed(0)}€</div>
+            <div class="strat-label">Затраты на звонки</div>
+          </div>
+          <div class="strat-item">
+            <div class="strat-value">${(result.conversion_rate * 100).toFixed(1)}%</div>
+            <div class="strat-label">Ожидаемая конверсия</div>
+          </div>
+          <div class="strat-item">
+            <div class="strat-value">${result.optimal_threshold !== null ? result.optimal_threshold.toFixed(2) : '—'}</div>
+            <div class="strat-label">Порог вероятности</div>
+          </div>
+        </div>
+        <div style="margin:16px 0; text-align:center;">
+          <canvas id="profitChart" width="900" height="350" style="max-width:100%; border:1px solid #e8eaed; border-radius:6px; background:#fff;"></canvas>
+        </div>
+        ${downloadLink}
+      </div>`;
+    drawProfitChart(result);
+  } catch (err) {
+    document.getElementById('strategyResult').innerHTML = `<div class="result-box negative"><h4>❌ Ошибка</h4><p>${err.message}</p></div>`;
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'Рассчитать стратегию';
+  }
+});
+
+function drawProfitChart(result) {
+  const canvas = document.getElementById('profitChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 30, bottom: 50, left: 85, right: 30 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+
+  const x = result.profit_curve_x;
+  const y = result.profit_curve_y;
+  const maxX = x[x.length - 1];
+  const maxY = Math.max(...y, 1);
+  const minY = Math.min(...y, 0);
+
+  const yRange = maxY - minY || 1;
+  const toX = (v) => pad.left + (v / maxX) * chartW;
+  const toY = (v) => pad.top + chartH - ((v - minY) / yRange) * chartH;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = '#e8eaed';
+  ctx.lineWidth = 0.5;
+  const nGridY = 5;
+  for (let i = 0; i <= nGridY; i++) {
+    const yy = pad.top + (i / nGridY) * chartH;
+    ctx.beginPath(); ctx.moveTo(pad.left, yy); ctx.lineTo(W - pad.right, yy); ctx.stroke();
+  }
+  const nGridX = 6;
+  for (let i = 0; i <= nGridX; i++) {
+    const xx = pad.left + (i / nGridX) * chartW;
+    ctx.beginPath(); ctx.moveTo(xx, pad.top); ctx.lineTo(xx, pad.top + chartH); ctx.stroke();
+  }
+
+  // Profit curve
+  ctx.beginPath();
+  ctx.strokeStyle = '#4a90d9';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < x.length; i++) {
+    const cx = toX(x[i]), cy = toY(y[i]);
+    i === 0 ? ctx.moveTo(cx, cy) : ctx.lineTo(cx, cy);
+  }
+  ctx.stroke();
+
+  // Zero line
+  ctx.strokeStyle = '#e74c3c';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  const zeroY = toY(0);
+  ctx.beginPath(); ctx.moveTo(pad.left, zeroY); ctx.lineTo(W - pad.right, zeroY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Optimal point
+  const optX = result.optimal_n_calls;
+  const optY = result.optimal_profit;
+  const ox = toX(optX), oy = toY(optY);
+  ctx.fillStyle = '#11998e';
+  ctx.beginPath(); ctx.arc(ox, oy, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#11998e';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(ox, oy, 5, 0, Math.PI * 2); ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#333';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Количество обзвоненных клиентов', W / 2, H - 8);
+  // X-axis labels
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= nGridX; i++) {
+    const val = Math.round((i / nGridX) * maxX);
+    const xx = pad.left + (i / nGridX) * chartW;
+    ctx.fillText(val.toLocaleString(), xx, H - pad.bottom + 18);
+  }
+
+  // Y-axis label
+  ctx.save();
+  ctx.translate(14, pad.top + chartH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.fillText('Прибыль, евро', 0, 0);
+  ctx.restore();
+
+  // Y-axis labels
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= nGridY; i++) {
+    const val = minY + (i / nGridY) * yRange;
+    const yy = pad.top + chartH - (i / nGridY) * chartH;
+    ctx.fillText(val.toFixed(0), pad.left - 8, yy + 4);
+  }
+
+  // Optimal label
+  ctx.fillStyle = '#11998e';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Оптимум: ${optX.toLocaleString()} клиентов, ${optY.toFixed(0)}€`, ox, oy - 12);
+}
+</script>
+</body>
+</html>
