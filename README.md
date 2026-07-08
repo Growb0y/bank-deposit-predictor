@@ -23,6 +23,10 @@ ML-вебприложение для выявления клиентов для 
 ![Прогноз](screenshots/single_client_prediction.png)
 
 
+## Превью
+
+![Графики](screenshots/graphics.png)![Прогноз](screenshots/single_client_prediction.png)![Калькулятор стратегии](screenshots/strategy_calculator.png)
+
 ## Технологии
 
 Python 3.9+, FastAPI, CatBoost, Pandas, Matplotlib/Seaborn, scikit-learn, Jinja2, Uvicorn.
