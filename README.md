@@ -11,12 +11,15 @@ ML-вебприложение для выявления клиентов для 
 ## Превью
 
 Калькулятор стратегии по новому загруженному файлу
+
 ![Калькулятор стратегии](screenshots/strategy_calculator.png)
 
 Визуализация данных
+
 ![Графики](screenshots/graphics.png)
 
 Прогноз оформления депозита
+
 ![Прогноз](screenshots/single_client_prediction.png)
 
 
