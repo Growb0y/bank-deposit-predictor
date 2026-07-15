@@ -10,22 +10,29 @@ ML-вебприложение для выявления клиентов для 
 
 ## Превью
 
-Калькулятор стратегии по новому загруженному файлу
+![Метрики модели](screenshots/metrics1.png)
 
-![Калькулятор стратегии](screenshots/strategy_calculator.png)
+![Графики](screenshots/graphics1.png)
 
-Визуализация данных
+![](screenshots/graphics2.png)
 
-![Графики](screenshots/graphics.png)
+![](screenshots/graphics3.png)
 
-Прогноз оформления депозита
+![](screenshots/graphics4.png)
 
-![Прогноз](screenshots/single_client_prediction.png)
+![Прогноз](screenshots/prognosis1.png)
 
+![](screenshots/prognosis2.png)
 
-## Превью
+![Рекомендации](screenshots/recomendations1.png)
 
-![Графики](screenshots/graphics.png)![Прогноз](screenshots/single_client_prediction.png)![Калькулятор стратегии](screenshots/strategy_calculator.png)
+![](screenshots/recomendations2.png)
+
+![](screenshots/recomendations3.png)
+
+![](screenshots/recomendations4.png)
+
+![](screenshots/recomendations5.png)
 
 ## Технологии
 
